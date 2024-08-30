@@ -49,7 +49,7 @@ var parseManifest = function(content) {
   return parser.manifest;
 };
 
-var parseKey = function(basedir, decrypt, resources, manifest, parent) {
+var parseKey = function(basedir, decrypt, resources, manifest, parent, headers) {
 	if (!manifest.parsed.segments[0] || !manifest.parsed.segments[0].key) {
 		return {};
 	}
@@ -79,7 +79,7 @@ var parseKey = function(basedir, decrypt, resources, manifest, parent) {
 	}
 
 	// get the aes key
-	var keyContent = syncRequest('GET', keyUri).getBody();
+	var keyContent = syncRequest('GET', keyUri, { headers }).getBody();
 	key.bytes = new Uint32Array([
 		keyContent.readUInt32BE(0),
 		keyContent.readUInt32BE(4),
@@ -97,7 +97,7 @@ var parseKey = function(basedir, decrypt, resources, manifest, parent) {
 	return key;
 };
 
-var walkPlaylist = function(decrypt, basedir, uri, parent, manifestIndex, playlistFilter) {
+var walkPlaylist = function(decrypt, basedir, uri, headers, parent, manifestIndex, playlistFilter) {
 	var resources = [];
 	var manifest  = {};
 	manifest.uri  = uri;
@@ -119,7 +119,7 @@ var walkPlaylist = function(decrypt, basedir, uri, parent, manifestIndex, playli
 		parent.content = new Buffer(parent.content.toString().replace(uri, path.relative(path.dirname(parent.file), manifest.file)));
 	}
 
-  manifest.content = syncRequest('GET', manifest.uri).getBody();
+  manifest.content = syncRequest('GET', manifest.uri, { headers }).getBody();
   debug('manifest.content');
   debug(manifest.content);
   manifest.parsed  = parseManifest(manifest.content);
@@ -128,7 +128,7 @@ var walkPlaylist = function(decrypt, basedir, uri, parent, manifestIndex, playli
 	manifest.parsed.mediaGroups = manifest.parsed.mediaGroups || {};
 
   var playlists = manifest.parsed.playlists.concat(mediaGroupPlaylists(manifest.parsed.mediaGroups));
-	var key = parseKey(basedir, decrypt, resources, manifest, parent);
+	var key = parseKey(basedir, decrypt, resources, manifest, parent, headers);
 
 	// SEGMENTS
 	manifest.parsed.segments.forEach(function(s, i) {
@@ -172,7 +172,7 @@ var walkPlaylist = function(decrypt, basedir, uri, parent, manifestIndex, playli
 		if (!p.uri) {
 			return;
 		}
-		resources = resources.concat(walkPlaylist(decrypt, basedir, p.uri, manifest, z, playlistFilter));
+		resources = resources.concat(walkPlaylist(decrypt, basedir, p.uri, headers, manifest, z, playlistFilter));
 	});
 
 	return resources;

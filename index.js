@@ -17,13 +17,14 @@ const METRICS = {
   STREAM_COMPLETED: 'HLS: stream download completed'
 };
 
-function download(concurrency, resources, throttle, events, callback) {
+function download(concurrency, resources, throttle, events, requestParams, callback) {
   A.eachLimit(
     resources.filter(r => !r.content && r.uri),
     concurrency,
     function(item, done) {
       var options = {
         uri: item.uri,
+        headers: requestParams.headers,
         timeout: 60 * 1000, // 60 seconds timeout
         encoding: null, // treat all responses as a buffer
         retryDelay: 1000 // retry 1s after on failure
@@ -203,6 +204,7 @@ function HlsPlugin(script, event, opts) {
       false,
       '/dev/null',
       requestParams.url,
+      requestParams.headers,
       false,
       0,
       function(variantStreams) {
@@ -214,7 +216,7 @@ function HlsPlugin(script, event, opts) {
     );
     const startedAt = Date.now();
     events.emit('counter', METRICS.STREAM_STARTED, 1);
-    download(concurrency, resources, throttle, events, function(err) {
+    download(concurrency, resources, throttle, events, requestParams, function(err) {
       if (err) {
         debug(err);
         events.emit('error', err);
