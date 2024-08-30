@@ -112,9 +112,9 @@ function HlsPlugin(script, event, opts) {
           const matchingStreams = variantStreams.filter(s => {
             // TODO: Handle the case when no matching resolution is found
             return (
-              s.attributes.RESOLUTION.width ===
+              s.attributes?.RESOLUTION.width ===
                 selectorParams.resolution.width &&
-              s.attributes.RESOLUTION.height ===
+              s.attributes?.RESOLUTION.height ===
                 selectorParams.resolution.height
             );
           });
